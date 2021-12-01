@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
 default = []
-desktop = ["rand"]
+
 
 
 [dependencies]
@@ -17,12 +16,7 @@ wasm-bindgen-futures = "0.4.28"
 serde = { version = "*", features = ['derive'] }
 bincode = "*"
 serde_json = "*"
-rand = { version = "*", optional = true }
-
-
-[dependencies.fixed]
-version = "1.10"
-features = ["serde"]
+adhoc_audio = { version = "0.1.1" }
 
 [dependencies.web-sys]
 version = "0.3.4"
@@ -30,6 +24,8 @@ features = [
   'Document',
   'Element',
   'HtmlElement',
+  'Element',
+  'HtmlCollection',
   'Node',
   'Window',
   'AudioContext',
@@ -52,4 +48,7 @@ features = [
   'AudioWorkletNode',
   'AudioParamMap',
   'console',
+  'HtmlButtonElement',
+  'Event',
+  'MouseEvent'
 ]

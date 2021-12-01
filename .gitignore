@@ -1,3 +1,4 @@
 /target
-/recorder_output
+/recorder_output/*
+!/recorder_output/index.html
 /resources

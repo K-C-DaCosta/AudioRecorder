@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    </head>
+    <style>
+        :root {
+            --palette-color-0: #1b262c;
+            --palette-color-1: #0f4c75;
+            --palette-color-2: #3282b8;
+            --palette-color-3: #bbe1fa;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background-color: var(--palette-color-0);
+            color: var(--palette-color-3)
+        }
+
+        .gg-record {
+            box-sizing: border-box;
+            position: relative;
+            display: block;
+            transform: scale(var(--ggs, 1));
+            width: 20px;
+            height: 20px;
+            border: 6px solid transparent;
+            box-shadow: 0 0 0 2px, inset 0 0 0 10px;
+            border-radius: 100px
+        }
+
+        .gg-mic {
+            box-sizing: border-box;
+            position: relative;
+            display: block;
+            transform: scale(var(--ggs, 1));
+            width: 16px;
+            height: 12px;
+            border-bottom-left-radius: 120px;
+            border-bottom-right-radius: 120px;
+            border: 2px solid;
+            border-top: 0;
+            margin-top: 3px
+        }
+
+        .gg-mic::after,
+        .gg-mic::before {
+            content: "";
+            display: block;
+            box-sizing: border-box;
+            position: absolute
+        }
+
+        .gg-mic::after {
+            border: 2px solid;
+            width: 8px;
+            height: 18px;
+            left: 2px;
+            top: -10px;
+            border-radius: 4px
+        }
+
+        .gg-mic::before {
+            width: 10px;
+            height: 4px;
+            top: 12px;
+            left: 1px;
+            border-right: 4px solid transparent;
+            box-shadow:
+                0 2px 0,
+                inset -2px 0 0
+        }
+
+
+        .recorder_button {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            border: thin solid var(--palette-color-3);
+            border-radius: 4px;
+            background-color: var(--palette-color-1);
+        }
+
+        .recorder_button div {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+        }
+
+        .recorder_button> :nth-child(2) {
+            border: thin solid var(--palette-color-3);
+            border-width: 0 0 0 thin;
+        }
+        .recorder_button > :nth-child(1)  i  {
+            margin: 0px calc( var(--icon-padding,8)*1px)  0px calc( var(--icon-padding,8)*1px);
+        } 
+
+        .recorder_button button {
+            margin: 0px;
+            color: gray;
+            border-radius: 2px;
+            border-width: 0;
+            padding: 10px;
+            background-color: var(--palette-color-0);
+            cursor: pointer;
+        }
+
+        .recorder_button button>i[class="gg-record"] {
+            transition: 0.3s;
+        }
+
+        .recorder_button:hover i[class="gg-record"] {
+            color: var(--palette-color-3);
+        }
+    </style>
+
+    <body>
+        <h1>Wasm Hello</h1>
+        <script type="module">
+            import init from './audio_recorder.js';
+            async function run() {
+                await init();
+            }
+            run();
+        </script>
+        <div class="recorder_button">
+            <div>
+                <i class="gg-mic"></i>
+            </div>
+            <div>
+                <button>
+                    <i class="gg-record"></i>
+                </button>
+            </div>
+        </div>
+    </body>
+</html>
