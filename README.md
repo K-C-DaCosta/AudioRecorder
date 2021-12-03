@@ -29,13 +29,12 @@ in any browser(i recommend firefox) go to the address:
 
 when you press submit a new binary file should show up in `./recorder_output/test`  the file is encoded in a custom binary format. 
 
-## decode the file
-i already wrote a test that decodes the uploaded file to wav just type
+## how to listen to the recording
+This project encodes data into a custom audio format so no audio software will be able to decode it in its current representation. However, I wrote a test that decodes the uploaded recording to wav just type:
 ```
 cargo test foo
 ```
-and you can playback your voice in your wav player of choice
-
+A wav version of the file should be written to `recorder_output/test` and you can playback your voice in vlc/mpv/etc
 
 
 
