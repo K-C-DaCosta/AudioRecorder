@@ -30,7 +30,6 @@
             box-shadow: 0 0 0 2px, inset 0 0 0 10px;
             border-radius: 100px
         }
-
         .gg-mic {
             box-sizing: border-box;
             position: relative;
@@ -44,7 +43,6 @@
             border-top: 0;
             margin-top: 3px
         }
-
         .gg-mic::after,
         .gg-mic::before {
             content: "";
@@ -52,7 +50,6 @@
             box-sizing: border-box;
             position: absolute
         }
-
         .gg-mic::after {
             border: 2px solid;
             width: 8px;
@@ -61,7 +58,6 @@
             top: -10px;
             border-radius: 4px
         }
-
         .gg-mic::before {
             width: 10px;
             height: 4px;
@@ -72,14 +68,12 @@
                 0 2px 0,
                 inset -2px 0 0
         }
-
-
         .recorder_button {
             display: flex;
             flex-direction: row;
             align-items: center;
             border: thin solid var(--palette-color-3);
-            border-radius: 4px;
+            border-radius: 2px;
             background-color: var(--palette-color-1);
         }
 
@@ -91,6 +85,7 @@
 
         .recorder_button> :nth-child(2) {
             border: thin solid var(--palette-color-3);
+            width: 100%;
             border-width: 0 0 0 thin;
         }
         .recorder_button > :nth-child(1)  i  {
@@ -98,6 +93,9 @@
         } 
 
         .recorder_button button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0px;
             color: gray;
             border-radius: 2px;
@@ -105,6 +103,10 @@
             padding: 10px;
             background-color: var(--palette-color-0);
             cursor: pointer;
+            width: 100%;
+        }
+        .recorder_button button input[type="file"]{
+            display: none;
         }
 
         .recorder_button button>i[class="gg-record"] {
@@ -115,9 +117,8 @@
             color: var(--palette-color-3);
         }
     </style>
-
     <body>
-        <h1>Wasm Hello</h1>
+        <h1>Record Audio in rust</h1>
         <script type="module">
             import init from './audio_recorder.js';
             async function run() {
@@ -125,15 +126,18 @@
             }
             run();
         </script>
-        <div class="recorder_button">
-            <div>
-                <i class="gg-mic"></i>
+        <form action="test" enctype="multipart/form-data" method="post">
+            <div class="recorder_button">
+                <div>
+                    <i class="gg-mic"></i>
+                </div>
+                <div>
+                    <button type="button">
+                        <i class="gg-record"></i>
+                    </button>
+                </div>
             </div>
-            <div>
-                <button>
-                    <i class="gg-record"></i>
-                </button>
-            </div>
-        </div>
+            <input type="submit"> 
+        </form>
     </body>
 </html>

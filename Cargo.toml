@@ -2,11 +2,11 @@
 name = "audio_recorder"
 version = "0.1.0"
 edition = "2021"
+description = "A multiplatform audio recorder for rust and the web"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = []
-
 
 
 [dependencies]
@@ -17,6 +17,7 @@ serde = { version = "*", features = ['derive'] }
 bincode = "*"
 serde_json = "*"
 adhoc_audio = { version = "0.1.1" }
+base64 = { version = "*" }
 
 [dependencies.web-sys]
 version = "0.3.4"
@@ -24,8 +25,11 @@ features = [
   'Document',
   'Element',
   'HtmlElement',
-  'Element',
+  'HtmlButtonElement',
   'HtmlCollection',
+  'HtmlInputElement',
+  'HtmlFormElement',
+  'FormData',
   'Node',
   'Window',
   'AudioContext',
@@ -48,7 +52,12 @@ features = [
   'AudioWorkletNode',
   'AudioParamMap',
   'console',
-  'HtmlButtonElement',
   'Event',
-  'MouseEvent'
+  'MouseEvent',
+  'FocusEvent',
+  'XmlHttpRequest',
+  'Location',
+  'Blob',
+  'BlobPropertyBag',
+  'EndingTypes'
 ]

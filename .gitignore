@@ -1,4 +1,9 @@
 /target
 /recorder_output/*
-!/recorder_output/index.html
 /resources
+
+!/recorder_output/index.html
+!/recorder_output/test/
+/recorder_output/test/[^.]*
+
+
