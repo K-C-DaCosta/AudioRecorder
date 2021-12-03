@@ -27,6 +27,8 @@ this will start a server on `localhost:6969`
 in any browser(i recommend firefox) go to the address:
 `localhost:6969/index.html`
 
+when you press submit a new binary file should show up in `./recorder_output/test`
+
 
 
 
