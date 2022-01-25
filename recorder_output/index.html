@@ -68,54 +68,7 @@
                 0 2px 0,
                 inset -2px 0 0
         }
-        .recorder_button {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            border: thin solid var(--palette-color-3);
-            border-radius: 2px;
-            background-color: var(--palette-color-1);
-        }
 
-        .recorder_button div {
-            display: flex;
-            flex-direction: row;
-            height: 100%;
-        }
-
-        .recorder_button> :nth-child(2) {
-            border: thin solid var(--palette-color-3);
-            width: 100%;
-            border-width: 0 0 0 thin;
-        }
-        .recorder_button > :nth-child(1)  i  {
-            margin: 0px calc( var(--icon-padding,8)*1px)  0px calc( var(--icon-padding,8)*1px);
-        } 
-
-        .recorder_button button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0px;
-            color: gray;
-            border-radius: 2px;
-            border-width: 0;
-            padding: 10px;
-            background-color: var(--palette-color-0);
-            cursor: pointer;
-            width: 100%;
-        }
-        .recorder_button button input[type="file"]{
-            display: none;
-        }
-
-        .recorder_button button>i[class="gg-record"] {
-            transition: 0.3s;
-        }
-
-        .recorder_button:hover i[class="gg-record"] {
-            color: var(--palette-color-3);
-        }
     </style>
     <body>
         <h1>Record Audio in rust</h1>

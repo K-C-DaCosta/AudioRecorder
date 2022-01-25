@@ -1,10 +1,12 @@
-use adhoc_audio::{AdhocCodec, SeekFrom, StreamInfo, Streamable, WavCodec};
+#[allow(unused_imports)]
+use adhoc_audio::{AdhocCodec, StreamInfo, Streamable, WavCodec};
+
 use audio_recorder::{
     collections::{LinkedList, Ptr},
     math,
     web_utils::{DomIter, ParentIter},
 };
-use js_sys::{Array, ArrayBuffer, Function, Uint8Array};
+use js_sys::{Array, Function, Uint8Array};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, prelude::*, JsCast, JsValue};
@@ -12,6 +14,10 @@ use wasm_bindgen_futures::{spawn_local, JsFuture};
 use web_sys::*;
 
 pub static mut GLOBAL_APP_STATE: Option<AppState> = None;
+const RAMP_UP_DURATION_IN_SECS: f32 = 0.1;
+const BEEP_DURATION_IN_SECS: f32 = 0.2;
+const BEEP_DAMPEN_DELTA: f32 = 0.1;
+const SAMPLE_RATE: u32 = 44_100;
 
 #[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct RecordState {
@@ -42,11 +48,10 @@ impl AppState {
             });
         }
     }
-    fn get() -> &'static Self {
+    pub fn get() -> &'static Self {
         unsafe { GLOBAL_APP_STATE.as_ref().unwrap() }
     }
-
-    fn get_mut() -> &'static mut Self {
+    pub fn get_mut() -> &'static mut Self {
         unsafe { GLOBAL_APP_STATE.as_mut().unwrap() }
     }
 }
@@ -81,15 +86,13 @@ pub fn bytes_to_blob(byte_slice: &[u8]) -> Blob {
     bytes.push(&typed_array);
     let mut options = BlobPropertyBag::new();
     options.type_("application/octet-stream");
-    let blob =
-        Blob::new_with_u8_array_sequence_and_options(&bytes, &options).expect("blob failed");
-
+    let blob = Blob::new_with_u8_array_sequence_and_options(&bytes, &options).expect("blob failed");
     log_js(blob.dyn_ref::<JsValue>().unwrap().clone());
     blob
 }
 
 #[test]
-fn foo() {
+fn convert_recording_to_wav() {
     use std::fs::File;
     let file = File::open("./recorder_output/test/rec.adhoc").unwrap();
     let mut codec = AdhocCodec::load(file).unwrap();
@@ -99,7 +102,46 @@ fn foo() {
         wav.encode(&buffer[0..n]);
     }
 
-    wav.save_to(File::create("./recorder_output/test/rec.wav").unwrap()).unwrap();
+    wav.save_to(File::create("./recorder_output/test/rec.wav").unwrap())
+        .unwrap();
+}
+
+pub fn generate_beep_noise(freq: f32) -> Vec<f32> {
+    let mut t = 0.0f32;
+    let dt = 1.0 / SAMPLE_RATE as f32;
+    let mut beep_buffer = Vec::new();
+
+    while t < BEEP_DURATION_IN_SECS {
+        let s = math::linear_step(
+            t,
+            BEEP_DURATION_IN_SECS - BEEP_DAMPEN_DELTA,
+            BEEP_DURATION_IN_SECS,
+        );
+        let u = math::linear_step(t, 0.0, RAMP_UP_DURATION_IN_SECS);
+        let ramp_up = u * u;
+        let dampening = 1.0 - s * s;
+        let sample = (t * freq).sin() * 0.5 * dampening * ramp_up;
+        beep_buffer.push(sample);
+        t += dt;
+    }
+
+    beep_buffer
+}
+
+pub fn play_beep_noise(ctx: &AudioContext, freq: f32) {
+    let beep_pcm = generate_beep_noise(freq);
+    let source = AudioBufferSourceNode::new(&ctx).unwrap();
+    let buffer = ctx
+        .create_buffer(1, beep_pcm.len() as u32, SAMPLE_RATE as f32)
+        .unwrap();
+    buffer.copy_to_channel(&beep_pcm, 0).unwrap();
+    source.set_buffer(Some(&buffer));
+    source
+        .dyn_ref::<AudioNode>()
+        .unwrap()
+        .connect_with_audio_node(&ctx.destination())
+        .unwrap();
+    source.start().unwrap();
 }
 
 async fn start() -> Result<(), JsValue> {
@@ -113,7 +155,7 @@ async fn start() -> Result<(), JsValue> {
     AppState::init();
     AppState::get_mut()
         .audio_codec
-        .set_info(StreamInfo::new(44_100, 1));
+        .set_info(StreamInfo::new(SAMPLE_RATE, 1));
 
     let stream = JsFuture::from(
         navigator.media_devices()?.get_user_media_with_constraints(
@@ -197,70 +239,64 @@ async fn start() -> Result<(), JsValue> {
                         .expect("style delete failed");
                     processor_list.remove_at(processing_node);
                     log("stop recording..");
+                    play_beep_noise(&ctx, 1000.0);
                 }
                 _ => panic!("shouldn't possible to reach"),
             }
         } else {
+            play_beep_noise(&ctx, 5000.0);
+
             let source = ctx.create_media_stream_source(&stream).unwrap();
+
             let processor = ctx.create_script_processor_with_buffer_size_and_number_of_input_channels_and_number_of_output_channels(1024, 1, 1).unwrap();
 
             source
                 .connect_with_audio_node(processor.dyn_ref().unwrap())
                 .unwrap();
-
-            let mut t = 0.0f32;
-            const BEEP_DURATION_IN_SECONDS: f32 = 1.0;
-            const BEEP_DAMPEN_DELTA:f32 =0.5;
-            let dt = 1.0 / 44_100.0;
-
+            let mut t = 0.0;
+            let dt = 1.0 / SAMPLE_RATE as f32;
             processor.set_onaudioprocess(Some(&closure_to_function(
                 move |e: AudioProcessingEvent| {
-                    let micophone_input = e.input_buffer().unwrap();
-                    let speaker_output = e.output_buffer().unwrap();
+                    // let speaker_output = e.output_buffer().unwrap();
+                    if t < BEEP_DURATION_IN_SECS + 0.5 {
+                        // speaker_output.copy_to_channel(&beep_buffer[..], 0).unwrap();
+                        t += 1024.0 * dt;
+                    } else {
+                        let micophone_input = e.input_buffer().unwrap();
+                        let microphone_samples =
+                            micophone_input.get_channel_data(0).unwrap_or(Vec::new());
 
-                    let microphone_samples =
-                        micophone_input.get_channel_data(0).unwrap_or(Vec::new());
-                    let mut beep_buffer = [0.0; 1024];
+                        AppState::get_mut().audio_codec.encode(&microphone_samples);
 
-                    if t < BEEP_DURATION_IN_SECONDS {
-                        let s = math::linear_step(t, BEEP_DURATION_IN_SECONDS-BEEP_DAMPEN_DELTA, BEEP_DURATION_IN_SECONDS); 
-                        for sample in &mut beep_buffer {
-                            let dampening = 1.0-s*s;
-                            *sample = (t * 5_000.0).sin() * 0.5 * dampening;
-                            t += dt;
-                        }
-                        speaker_output.copy_to_channel(&beep_buffer[..], 0).unwrap();
-                    }
+                        let amplitude = microphone_samples
+                            .iter()
+                            .max_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap_or(Ordering::Equal))
+                            .map(|&a| a.abs())
+                            .unwrap_or(1.0)
+                            * 10.0;
 
-                    AppState::get_mut().audio_codec.encode(&microphone_samples);
+                        let t = (amplitude.clamp(0.8, 2.0) - 0.8) / (2.0 - 0.8);
 
-                    let amplitude = microphone_samples
-                        .iter()
-                        .max_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap_or(Ordering::Equal))
-                        .map(|&a| a.abs())
-                        .unwrap_or(1.0) *10.0;
+                        let color_0 = [128.0, 128.0, 128.0];
+                        let color_1 = [255.0, 0.0, 0.0];
+                        let lerp = math::lerp(color_0, color_1, t * 0.8 + 0.2);
 
-                    let t = (amplitude.clamp(0.8, 2.0) - 0.8) / (2.0-0.8);
-
-                    let color_0 = [128.0, 128.0, 128.0];
-                    let color_1 = [255.0, 0.0, 0.0];
-                    let lerp = math::lerp(color_0, color_1, t*0.8 + 0.2 );
-
-                    button
-                        .set_attribute(
-                            "style",
-                            format!(
-                                r"color:rgb({:.2},{:.2},{:.2}); 
-                            --ggs:{:.3}; 
-                            ",
-                                lerp[0],
-                                lerp[1],
-                                lerp[2],
-                                (t * t) * 0.8+ 0.8,
+                        button
+                            .set_attribute(
+                                "style",
+                                format!(
+                                    r"color:rgb({:.2},{:.2},{:.2}); 
+                                    --ggs:{:.3}; 
+                                    ",
+                                    lerp[0],
+                                    lerp[1],
+                                    lerp[2],
+                                    (t * t) * 0.8 + 0.8,
+                                )
+                                .as_str(),
                             )
-                            .as_str(),
-                        )
-                        .unwrap();
+                            .unwrap();
+                    }
                 },
             )));
             processor
@@ -285,10 +321,21 @@ async fn start() -> Result<(), JsValue> {
         }
     });
 
-    DomIter::new(document.get_elements_by_class_name("recorder_button"))
-        .flat_map(|button_container| DomIter::by_tag_name(button_container, "button"))
-        .filter_map(|e| e.dyn_into::<HtmlButtonElement>().ok())
-        .for_each(|button| button.set_onclick(Some(&start_recording)));
+    let set_recorder_event_hooks = closure_to_function(move |_: Event| {
+        DomIter::new(document.get_elements_by_class_name("recorder_button"))
+            .flat_map(|button_container| DomIter::by_tag_name(button_container, "button"))
+            .filter_map(|e| e.dyn_into::<HtmlButtonElement>().ok())
+            .for_each(|button| button.set_onclick(Some(&start_recording)));
+    });
+    
+    // if dom gets updated make sure recorder_buttons have proper event hooks
+    window
+        .set_interval_with_callback_and_timeout_and_arguments_1(
+            &set_recorder_event_hooks,
+            1000,
+            &JsValue::NULL,
+        )
+        .unwrap();
 
     Ok(())
 }
